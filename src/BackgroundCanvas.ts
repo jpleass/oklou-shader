@@ -6,7 +6,7 @@ import {
   ShaderMaterial,
   WebGLRenderer,
 } from "three";
-import { BackgroundCanvasShader } from "./shader";
+import { BackgroundCanvasShader } from "./shader/index";
 
 export class BackgroundCanvas {
   renderer: WebGLRenderer;
@@ -15,6 +15,7 @@ export class BackgroundCanvas {
   camera: Camera;
 
   material: ShaderMaterial;
+
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new WebGLRenderer({ canvas, antialias: false });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -49,23 +50,21 @@ export class BackgroundCanvas {
     this.renderer.domElement.style.width = "100%";
     this.renderer.domElement.style.height = "100%";
     this.material.uniforms.resolution.value.set(640, 640 * ratio);
+    this.renderer.render(this.scene, this.camera);
   }
 
   animationFrameId: number | null = null;
   fps = 24;
-  lastTime = 0;
-  tick(time: number) {
-    time *= 0.001; // Convert time to seconds
+  lastRenderTime = performance.now(); // Start time in milliseconds
 
-    // only updae every 1/24th of a second
-    if (time - this.lastTime < 1 / this.fps) {
-      this.animationFrameId = requestAnimationFrame(this.tick.bind(this));
-      return;
+  tick(timeInMilliseconds: number) {
+    const interval = 1000 / this.fps; // Interval in milliseconds for 24 fps
+
+    if (timeInMilliseconds - this.lastRenderTime >= interval) {
+      this.material.uniforms.time.value = timeInMilliseconds / 1000; // Use seconds if required for uniforms
+      this.renderer.render(this.scene, this.camera);
+      this.lastRenderTime = timeInMilliseconds;
     }
-    this.lastTime = time;
-
-    this.material.uniforms.time.value = time;
-    this.renderer.render(this.scene, this.camera);
 
     this.animationFrameId = requestAnimationFrame(this.tick.bind(this));
   }

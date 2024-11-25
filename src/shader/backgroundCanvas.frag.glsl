@@ -33,25 +33,29 @@ float N(float t) {
 
 uniform float time;
 uniform float speed;
+uniform float seed;
 uniform float scroll;
 uniform vec2 resolution;
 varying vec2 vUv;
+
 
 void main() {
   vec2 uv = vUv;
   float ratio = resolution.x / resolution.y;
   vec2 centeredUV = uv - 0.5;
 
+  float seedTime = time + seed;
+
   // Rotate with Noise
-  float degree = noise(vec2((time + (scroll * 0.0025)) * speed, centeredUV.x * centeredUV.y));
+  float degree = noise(vec2((seedTime + (scroll * 0.025)) * speed, centeredUV.x * centeredUV.y));
   centeredUV.y /= ratio;
   centeredUV *= Rot(radians((degree - 0.5) * 720.0 + 180.0));
   centeredUV.y *= ratio;
 
   // Wave warp with sin
-  float frequency = 0.25;
+  float frequency = 1.25;
   float amplitude = 2.0;
-  float warpSpeed = time * speed * 0.05;
+  float warpSpeed = seedTime * speed * 0.05;
   centeredUV.x += sin(centeredUV.y * frequency + warpSpeed) / amplitude;
   centeredUV.y += sin(centeredUV.x * frequency * 1.5 + warpSpeed) / (amplitude * 0.5);
 
@@ -70,14 +74,14 @@ void main() {
   
   vec3 finalComp = mix(layer1, layer2, S(0.5, -0.3, centeredUV.y));
 
+  // Keep the top of the screen the deep blue color.
+  finalComp = mix(finalComp, colorDeepBlue, S(.75, 1.05, uv.y));
   
   // Add color noise to the tDiffuse.
-  float timeSin = sin(time);
+  float timeSin = sin(seedTime);
   float p = uv.x + uv.y;
   vec3 randomColor = vec3(N(timeSin + p), N(timeSin + p + 1.0), N(timeSin + p + 2.0));
-  finalComp.rgb += randomColor * 0.075;
-
-
+  finalComp.rgb += randomColor * 0.075;  
 
   gl_FragColor = vec4(finalComp, 1.0);
 }
